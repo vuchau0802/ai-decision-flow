@@ -71,7 +71,25 @@ export default function FlowCanvas() {
     ...n,
     data: { ...n.data, onChange: updateNodePrompt },
   }));
- 
+  
+  const runWorkflow = useCallback(async () => {
+  const cleanEdges = edges.map((e) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    sourceHandle: e.sourceHandle,
+  }));
+  const cleanNodes = nodes.map((n) => ({ id: n.id, data: { prompt: n.data.prompt } }));
+
+  const res = await fetch("/api/run-workflow", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nodes: cleanNodes, edges: cleanEdges }),
+  });
+  const { eventId } = await res.json();
+  alert(`Workflow started! Event ID: ${eventId}\nCheck the Inngest dashboard at http://localhost:8288 to see execution.`);
+  }, [nodes, edges]);
+
   const onConnect = useCallback(
     (connection: Connection) => {
       // Edge color/label depends on which handle (yes/no) it came from
@@ -108,6 +126,14 @@ export default function FlowCanvas() {
       >
         + Add Node
       </button>
+      
+      <button
+        onClick={runWorkflow}
+        className="absolute top-4 left-40 z-10 bg-green-600 text-white px-4 py-2 rounded-md shadow hover:bg-green-700"
+    >
+        ▶ Run Workflow
+      </button>
+    
       <ReactFlow
         nodes={nodesWithHandlers}
         edges={edges}
